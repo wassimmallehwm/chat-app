@@ -1,0 +1,48 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="styles.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div class="container-fluid">
+    <div class="alert alert-success hidden" id="join-alert">
+        <button id="close-join-alert" type="button" class="close" data-dismiss="alert">x</button>
+        <p id="join-msg"></p>
+    </div>
+    <div class="alert alert-danger hidden" id="leave-alert">
+        <button id="close-leave-alert" type="button" class="close" data-dismiss="alert">x</button>
+        <p id="leave-msg"></p>
+    </div>
+    <div class="row">
+        <div class="col-md-2 col-sm-3 col-xs-4 rooms">
+            <li class="room"><span class="fa fa-globe"></span>
+                Public</li>
+            <ul class="room-list">
+            </ul>
+        </div>
+        <div class="chat-panel col-md-10 col-sm-9 col-xs-8">
+            <div class="room-header row col-6">
+                <div class="col-sm-3"><span class="curr-room-text"></span> <span class="curr-room-num-users"> </span></div>
+                <div class="col-sm-3 search pull-right">
+                        <span class="glyphicon glyphicon-search"></span>
+                    <input type="text" id="search-box" placeholder="Search" />
+                </div>
+            </div> 
+            <div class="message-form">
+                <form id="user-input">
+                    <div class="col-sm-12">
+                        <input id="user-message" type="text" placeholder="Enter your message" />
+                    </div>
+                    <!-- <div class="col-sm-2">
+                        <input class="btn btn-primary" type="submit" value="send" />
+                    </div> -->
+                </form>
+            </div>
+            <ul id="messages" class="col-sm-12">
+
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/script.js"></script>
+
