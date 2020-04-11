@@ -122,6 +122,32 @@ input {
     display: flex;
     align-items: stretch;
 }
+#private-messages { 
+    list-style-type: none; margin: 0; padding: 0; 
+    color: #3B4048;
+    /* max-height: 85%; */
+    height: calc(100% - 150px);
+    /* overflow: scroll; */
+    overflow: auto;
+}
+#private-messages li .user-image{
+    /* width: 50px; */
+    /* display: inline-block; */
+}
+#private-messages li .user-message{
+    margin-left: 10px;
+    color: #222;
+}
+
+#private-messages li .user-name-time span{
+    color: #ABB2BF;
+}
+
+#private-messages li { 
+    padding: 5px 10px; 
+    display: flex;
+    align-items: stretch;
+}
 
 .msg-time {
     margin-left: 5px;
@@ -141,6 +167,16 @@ input {
     padding: 5px!important;
 }
 
+.msg-count{
+    display: inline!important;
+    padding: 5px 10px!important;
+    margin-left: 25px;
+    color: white;
+    background-color: red;
+    font-weight: bold;
+    border-radius: 50%;
+}
+
 
 .alert{
     position: absolute;
@@ -148,4 +184,45 @@ input {
     width: 30%;
     z-index: 11;
     left: 35%;
+}
+
+#chat-with{
+    color: darkgray;
+    font-size: 24px;
+    font-weight: bold;
+    list-style-type: none;
+    list-style: none;
+    display: inline!important;
+}
+
+.own-message{
+    background-color: rgb(213, 239, 248);
+    margin-left: 60%;
+    margin-right: 5%;
+    border-radius: 5px;
+    width: 400px;
+    margin-top: 10px;
+}
+
+.other-msg{
+    background-color:lightgray;
+    border-radius: 5px;
+    width: 400px;
+    margin-top: 10px;
+}
+
+.user-item{
+    border-radius: 5px; 
+}
+
+.user-img-item{
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+}
+
+.user-img-item-head{
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
 }

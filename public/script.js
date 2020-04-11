@@ -24,6 +24,9 @@ let sendTo = "";
 const form = document.querySelector('#user-input');
 const messageInput = document.querySelector('#user-message');
 const chatList = document.querySelector('#messages');
+const privateChatList = document.querySelector('#private-messages');
+const privateChatContent = document.querySelector('#private-chat-content');
+const chatWith = document.querySelector('#chat-with');
 const usersList = document.querySelector('.room-list');
 messageInput.focus();
 
@@ -40,9 +43,11 @@ document.querySelector('.room').addEventListener('click', () => {
 
 //on recieving message
 socket.on('messageToClient', (data) => {
-    console.log(data);
-    console.log("Message from " + data.user + " (server)");
-    chatList.innerHTML += buildHtml(data);
+    const input = {
+        msg: data.msg,
+        user: data.user
+    };
+    chatList.innerHTML += buildHtml(input);
     chatList.scrollTo(0, chatList.scrollHeight);
 })
 
@@ -55,9 +60,11 @@ socket.on('connect', () => {
 
 //display the history messages
 socket.on('catchUp', (history) => {
+    showPublicChatList();
     chatList.innerHTML = "";
     history.forEach((msgData) => {
         chatList.innerHTML += buildHtml(msgData);
+        chatList.scrollTo(0, chatList.scrollHeight);
     })
 })
 
@@ -91,32 +98,73 @@ socket.on('userJoined', (data) => {
     const userItem = Array.from(document.getElementsByClassName('user-item'));
     userItem.forEach((item) => {
         item.addEventListener('click', () => {
+            removeBackgroundColor(userItem);
+            item.style.backgroundColor = "#e4e2e24d";
             form.removeEventListener('submit', priavteMessage);
             form.removeEventListener('submit', formSubmission);
-            chatList.innerHTML = "";
-            sendTo = item.id;
-            console.log('private msg : ' + item.id);
+            privateChatContent.innerHTML= "";
+            sendTo = item.id.trim();
+            showPrivateChatList(findUserById(sendTo));
+            if(item.childElementCount === 3){
+                item.childNodes.item(2).remove();
+            }
             form.addEventListener('submit', priavteMessage)
-        } )
+            socket.emit('checkPrivateMessages', {users: [sendTo, currentUser.id]});
+        })
+    })
+})
+
+function removeBackgroundColor(elem){
+    elem.forEach((item) => {
+        item.style.backgroundColor = "";
+    })
+}
+
+socket.on('updatePrivateChat', (data) => {
+    data.history.forEach((value) => {
+        let input = {
+            user: findUserById(value.sender),
+            msg: value.msg
+        }
+        console.log("********** HISTORY **********");
+        console.log(input);
+        privateChatContent.innerHTML += buildHtml(input);
+        privateChatList.scrollTo(0, privateChatList.scrollHeight);
     })
 })
 
 socket.on('privateMessageToclient', (data) => {
-    console.log(data);
-    //display message to recievre
+    const userItem = Array.from(document.getElementsByClassName('user-item'));
+    userItem.forEach((item) => {
+        elemntChildCount = item.childElementCount;
+        console.log("Node Elements " + elemntChildCount);
+        if(data.from == item.id.trim()){
+            if(privateChatList.getAttribute('user') == data.from){
+                console.log("Display my private message");
+                privateChatContent.innerHTML += buildHtml({user: findUserById(data.from), msg: data.message});
+                privateChatList.scrollTo(0, privateChatList.scrollHeight);
+            } else {
+                if(elemntChildCount == 2) {
+                    var node = document.createElement("div");
+                    var textnode = document.createTextNode("1");
+                    node.appendChild(textnode);  
+                    node.classList.add('msg-count');
+                    item.appendChild(node);
+                } else {
+                    let msgsCount = parseInt(item.childNodes.item(2).textContent);
+                    msgsCount++;
+                    const msgCountDisplay = "" + msgsCount;
+                    item.childNodes[2].remove();
+                    var node = document.createElement("div");
+                    var textnode = document.createTextNode(msgCountDisplay);
+                    node.appendChild(textnode);  
+                    node.classList.add('msg-count');
+                    item.appendChild(node);
+                }
+            }
+        }
+    })
 })
-
-function priavteMessage(event){
-        event.preventDefault();
-        const msg = messageInput.value;
-        socket.emit('privateMessageToServer', {
-            msg: msg,
-            sender: currentUser.id,
-            reciever: sendTo
-        });
-        console.log('private msg to : ' + sendTo);
-        form.reset();
-}
 
 socket.on('removeUser', (data) => {
 
@@ -159,36 +207,83 @@ let searchBox = document.querySelector('#search-box');
 function formSubmission(event) {
     event.preventDefault();
     const msg = messageInput.value;
-    socket.emit('messageToServer', {msg: msg, user: currentUser.username});
-    console.log(username + " sent message to server : " + msg);
+    socket.emit('messageToServer', {msg: msg, user: currentUser});
+    form.reset();
+}
+
+function priavteMessage(event){
+    event.preventDefault();
+    const msg = messageInput.value;
+    socket.emit('privateMessageToServer', {
+        msg: msg,
+        sender: currentUser.id,
+        reciever: sendTo
+    });
+    privateChatContent.innerHTML += buildHtml({user: findUserById(currentUser.id), msg: msg});
+    privateChatList.scrollTo(0, privateChatList.scrollHeight);
     form.reset();
 }
 
 function buildHtml(data){
-    const convertedDate = new Date().toLocaleString();
-    const html = 
-    "<li class='msg-item'>" + 
-        "<div class='user-image'>" +
-            "<img src='https://via.placeholder.com/30'/>" +
-        "</div>" + 
-        "<div class='user-message'>" + 
-            "<div class='user-name-time'>" + data.user + 
-                "<span class='msg-time'>" + convertedDate + "</span>" +
+    const convertedDate = new Date().toLocaleTimeString();
+
+    if(currentUser.id.trim() == data.user.id.trim()){
+        const html = 
+        "<li class='msg-item own-message'>" +
+            "<div class='user-message'>" + 
+                "<div class='user-name-time'>" +
+                    "<span class='msg-time'>" + convertedDate + "</span>" +
+                "</div>" +
+                "<div class='message-text'>" + data.msg+ "</div>" +
             "</div>" +
-            "<div class='message-text'>" + data.msg+ "</div>" +
-        "</div>" +
-    "</li>";
-    return html;
+        "</li>";
+        return html;
+    } else {
+        const html = 
+        "<li class='msg-item other-msg'>" + 
+            "<div class='user-image'>" +
+                "<img class='user-img-item' src='https://i.ya-webdesign.com/images/businessman-png-icon-1.png'/>" +
+            "</div>" + 
+            "<div class='user-message'>" + 
+                "<div class='user-name-time'>" + data.user.username + 
+                    "<span class='msg-time'>" + convertedDate + "</span>" +
+                "</div>" +
+                "<div class='message-text'>" + data.msg+ "</div>" +
+            "</div>" +
+        "</li>";
+        return html;
+    }
+}
+
+function findUserById(id){
+    var user = users.find(obj => {
+        return obj.id === id;        
+    })
+    return user;
+}
+
+function showPrivateChatList(user){
+    chatList.classList.add('hidden');
+    privateChatList.classList.remove('hidden');
+    privateChatList.setAttribute('user', user.id);
+    chatWith.innerText = user.username;
+}
+
+function showPublicChatList(){
+    privateChatList.classList.add('hidden');
+    privateChatList.setAttribute('user', "");
+    chatList.classList.remove('hidden');
 }
 
 function updateUsersList(data){
-    console.log(currentUser);
+    users = [];
     data.users.forEach((user) => {
+        users.push({id: user.id, username: user.username});
         if(user.username != currentUser.username){
             usersList.innerHTML += 
             "<li id=' "+ user.id +" ' class='user-item'>" + 
                 "<div class='user-image aside-list'>" +
-                    "<img src='https://via.placeholder.com/30'/>" +
+                    "<img class='user-img-item' src='https://i.ya-webdesign.com/images/businessman-png-icon-1.png'/>" +
                 "</div>" +
                 "<div class='user-message aside-list'>" + 
                     "<div class='user-name-time aside-list'>" + user.username +

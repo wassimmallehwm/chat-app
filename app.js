@@ -20,8 +20,6 @@ let currentUser = {};
 let globalHistory = [];
 
 let roomsList = [];
-let checkRoom = {};
-let room = {};
 
 io.on('connection', (socket) => {
     socket.username = socket.handshake.query.username;
@@ -48,34 +46,58 @@ io.on('connection', (socket) => {
         data.sender = data.sender.trim();
         data.reciever = data.reciever.trim();
 
-        // for(var i = 0; i < roomsList.length; i++) {
-        //     if (roomsList[i].users == [data.sender, data.reciever] ||
-        //         roomsList[i].users == [data.reciever, data.sender]) {
-        //         checkRoom = roomsList[i];
-        //         break;
-        //     }
-        // }
+        var existRoom = roomsList.find(obj => {
+            return obj.users[0] === data.sender && obj.users[1] === data.reciever || 
+            obj.users[1] === data.sender && obj.users[0] === data.reciever;        
+        })
 
-        // if(checkRoom != {}){
-        //     room = checkRoom;
-        //     //room.addMessage(data);
-        // } else {
-
-            room = new Room("room" + roomIndex, [data.sender, data.reciever]);
+        if(existRoom == undefined){
+            let privateRoom = new Room("room" + roomIndex, [data.sender, data.reciever]);
             roomIndex++;
+            
+            console.log("NEW ROOM ...");
             let recieverSocket = io.sockets.clients().connected[data.reciever];
-            //console.log(io.sockets.clients().connected[socket.id]);
-            //console.log(io.sockets.clients());
-            //console.log(recieverSocket);
-            socket.join(room.name);
-            recieverSocket.join(room.name);
-            //room.addMessage(data);
-            room.history.push(data);
-        //}
-        console.log("*********PRIVATE MESSAGE*********");
-        console.log(room);
-        console.log("******************************");
-        socket.to(room.name).emit('privateMessageToclient', {message: data.msg, from: data.sender});
+            // socket.join(privateRoom.name);
+            // recieverSocket.join(privateRoom.name);
+            privateRoom.history.push(data);
+            roomsList.push(privateRoom);
+            socket.to(data.reciever).emit('privateMessageToclient', {
+                message: data.msg,
+                from: data.sender,
+                room: privateRoom,
+                history: privateRoom.history
+            });
+        } else {
+            console.log("EXIST ROOM ...");
+            let recieverSocket = io.sockets.clients().connected[data.reciever];
+            // socket.join(existRoom.name);
+            // recieverSocket.join(existRoom.name);
+            existRoom.history.push(data);
+            socket.to(data.reciever).emit('privateMessageToclient', {
+                message: data.msg,
+                from: data.sender,
+                room: existRoom,
+                history: existRoom.history
+            });
+        }
+    });
+
+    socket.on('checkPrivateMessages', (data) => {
+        console.log('check private chat ...');
+        console.log(data);
+        data.users[0] = data.users[0].trim();
+        data.users[1] = data.users[1].trim();
+        var existRoom = roomsList.find(obj => {
+            return obj.users[0] === data.users[0] && obj.users[1] === data.users[1] || 
+            obj.users[1] === data.users[0] && obj.users[0] === data.users[1];        
+        })
+        if(existRoom != undefined){
+            console.log('Room exists ...');
+            console.log(existRoom.history);
+            socket.emit('updatePrivateChat', {history: existRoom.history, chatWith: data.users[0]});
+        }else {
+            console.log('Room DOES NOT exists ...');
+        }
     })
 
     socket.on('disconnect', () => {
